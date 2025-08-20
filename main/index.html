@@ -16,9 +16,9 @@
       width: 100%;
       height: 400px;
       max-height: 80vh;
-      background-size: contain;     /* image letterboxes inside */
+      background-size: contain;
       background-repeat: no-repeat;
-      background-position: center;  /* image centered */
+      background-position: center;
       background-color: transparent;
       transition: background-image 0.5s ease-in-out;
     }
@@ -26,8 +26,8 @@
     .thumbnail-container {
       overflow: hidden;
       width: 100%;
-      max-width: calc(4 * (80px + 58px)); /* show ~4 thumbs */
-      margin: 10px 0 0; /* left-aligned (no auto centering) */
+      max-width: calc(4 * (80px + 58px));
+      margin: 10px 0 0;
       background: transparent;
       box-sizing: border-box;
     }
@@ -36,7 +36,7 @@
       display: flex;
       align-items: flex-start;
       width: max-content;
-      animation: scrollTrack 40s linear infinite; /* continuous scroll */
+      animation: scrollTrack 40s linear infinite;
     }
 
     @keyframes scrollTrack {
@@ -72,6 +72,39 @@
       visibility: hidden;
       height: 0;
       overflow: hidden;
+    }
+
+    /* --- RESPONSIVE FIXES --- */
+    @media (max-width: 1024px) {
+      .hero {
+        height: 300px;
+      }
+      .thumbnail img {
+        max-height: 80px;
+        max-width: 65px;
+      }
+      .thumbnail {
+        margin: 0 20px;
+      }
+      .thumbnail-container {
+        max-width: calc(3 * (65px + 40px)); /* show ~3 thumbs on tablets */
+      }
+    }
+
+    @media (max-width: 600px) {
+      .hero {
+        height: 220px;
+      }
+      .thumbnail img {
+        max-height: 60px;
+        max-width: 50px;
+      }
+      .thumbnail {
+        margin: 0 15px;
+      }
+      .thumbnail-container {
+        max-width: calc(2.5 * (50px + 30px)); /* ~2–3 thumbs visible on mobile */
+      }
     }
   </style>
 </head>
@@ -131,17 +164,14 @@
 
       // --- CLICK HANDLER ---
       img.addEventListener('click', () => {
-        // Map thumbnail index back to heroImages index
         const baseIndex = idx % heroImages.length;
         currentIndex = baseIndex;
         hero.style.backgroundImage = `url(${heroImages[currentIndex]})`;
         alignThumbsToHeroImageLeft();
 
-        // Pause scrolling
         visibleTrack.style.animationPlayState = "paused";
         clearTimeout(resumeTimeout);
 
-        // Resume after 5s
         resumeTimeout = setTimeout(() => {
           visibleTrack.style.animationPlayState = "running";
         }, 5000);
@@ -156,7 +186,6 @@
 
     let resumeTimeout;
 
-    // --- Align thumbnails with the *visible* left edge of the hero image ---
     function alignThumbsToHeroImageLeft() {
       const heroW = hero.clientWidth;
       const heroH = hero.clientHeight;
@@ -164,16 +193,15 @@
       img.onload = () => {
         const naturalW = img.naturalWidth || 1;
         const naturalH = img.naturalHeight || 1;
-        const scale = Math.min(heroW / naturalW, heroH / naturalH); // 'contain'
+        const scale = Math.min(heroW / naturalW, heroH / naturalH);
         const scaledW = naturalW * scale;
-        const leftOffset = Math.max(0, (heroW - scaledW) / 2);      // bg-position:center
+        const leftOffset = Math.max(0, (heroW - scaledW) / 2);
         thumbContainer.style.marginLeft = `${leftOffset}px`;
       };
       img.src = heroImages[currentIndex];
     }
 
-    // Sync hero image to scroll position
-    const thumbWidth = 80 + 58; // img + margins
+    const thumbWidth = 80 + 58;
     function updateHeroFromScroll() {
       if (visibleTrack.style.animationPlayState === "paused") {
         requestAnimationFrame(updateHeroFromScroll);
@@ -194,18 +222,15 @@
       requestAnimationFrame(updateHeroFromScroll);
     }
 
-    // Re-align on resize (debounced)
     let resizeTO;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTO);
       resizeTO = setTimeout(alignThumbsToHeroImageLeft, 100);
     });
 
-    // Kick things off
     alignThumbsToHeroImageLeft();
     updateHeroFromScroll();
   </script>
 
 </body>
 </html>
-
