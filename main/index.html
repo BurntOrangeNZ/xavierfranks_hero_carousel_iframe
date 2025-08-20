@@ -27,9 +27,10 @@
       overflow: hidden;
       width: 100%;
       max-width: calc(4 * (80px + 58px));
-      margin: 10px 0 0;
+      margin: 10px 0 0;           /* desktop & tablet default gap */
       background: transparent;
       box-sizing: border-box;
+      will-change: margin-left, margin-top;
     }
 
     .thumbnail-track {
@@ -37,6 +38,7 @@
       align-items: flex-start;
       width: max-content;
       animation: scrollTrack 40s linear infinite;
+      will-change: transform;
     }
 
     @keyframes scrollTrack {
@@ -88,6 +90,7 @@
       }
       .thumbnail-container {
         max-width: calc(3 * (65px + 40px)); /* show ~3 thumbs on tablets */
+        margin-top: 10px;                   /* keep tablet spacing same */
       }
     }
 
@@ -104,7 +107,7 @@
       }
       .thumbnail-container {
         max-width: calc(2.5 * (50px + 30px)); /* ~2–3 thumbs visible on mobile */
-        margin-top: 5px; /* 👈 bring thumbnails closer to hero */
+        /* margin-top is auto-adjusted by JS to pull closer to the hero image */
       }
     }
   </style>
@@ -163,7 +166,7 @@
       img.src = src;
       thumb.appendChild(img);
 
-      // --- CLICK HANDLER ---
+      // Click to jump hero, pause auto-scroll, resume after 5s
       img.addEventListener('click', () => {
         const baseIndex = idx % heroImages.length;
         currentIndex = baseIndex;
@@ -172,7 +175,6 @@
 
         visibleTrack.style.animationPlayState = "paused";
         clearTimeout(resumeTimeout);
-
         resumeTimeout = setTimeout(() => {
           visibleTrack.style.animationPlayState = "running";
         }, 5000);
@@ -187,6 +189,24 @@
 
     let resumeTimeout;
 
+    // Helper: current effective thumbnail width (respects breakpoints)
+    function getThumbWidth() {
+      const thumbEl = document.querySelector('.thumbnail');
+      const imgEl = document.querySelector('.thumbnail img');
+      if (!thumbEl || !imgEl) return 138; // fallback to desktop value (80 + 58)
+
+      const thumbStyle = getComputedStyle(thumbEl);
+      const imgStyle = getComputedStyle(imgEl);
+
+      const marginLeft = parseFloat(thumbStyle.marginLeft) || 0;
+      const marginRight = parseFloat(thumbStyle.marginRight) || 0;
+      const maxW = parseFloat(imgStyle.maxWidth) || 80;
+
+      return maxW + marginLeft + marginRight;
+    }
+
+    // Align thumbnails under the visible *image* (not the full hero box)
+    // and on mobile pull the rail closer to the hero image.
     function alignThumbsToHeroImageLeft() {
       const heroW = hero.clientWidth;
       const heroH = hero.clientHeight;
@@ -194,15 +214,29 @@
       img.onload = () => {
         const naturalW = img.naturalWidth || 1;
         const naturalH = img.naturalHeight || 1;
-        const scale = Math.min(heroW / naturalW, heroH / naturalH);
+        const scale = Math.min(heroW / naturalW, heroH / naturalH); // 'contain'
         const scaledW = naturalW * scale;
+        const scaledH = naturalH * scale;
+
+        // Horizontal letterbox padding -> move thumbnails to image's left edge
         const leftOffset = Math.max(0, (heroW - scaledW) / 2);
         thumbContainer.style.marginLeft = `${leftOffset}px`;
+
+        // --- MOBILE-ONLY: tighten the vertical gap below the hero image ---
+        if (window.innerWidth <= 600) {
+          const verticalPad = Math.max(0, (heroH - scaledH) / 2); // top/bottom bars
+          const desiredGap = 8; // px space we want between image & thumbnails
+          // Pull the rail upward by the extra empty space (cap at -40px so it won't overlap too far)
+          const mt = Math.max(-40, Math.round(desiredGap - verticalPad));
+          thumbContainer.style.marginTop = `${mt}px`;
+        } else {
+          // Keep default spacing on tablet/desktop
+          thumbContainer.style.marginTop = '10px';
+        }
       };
       img.src = heroImages[currentIndex];
     }
 
-    const thumbWidth = 80 + 58;
     function updateHeroFromScroll() {
       if (visibleTrack.style.animationPlayState === "paused") {
         requestAnimationFrame(updateHeroFromScroll);
@@ -213,7 +247,9 @@
       const containerRect = thumbContainer.getBoundingClientRect();
       const offset = containerRect.left - trackRect.left;
 
-      const index = Math.floor(offset / thumbWidth) % heroImages.length;
+      const widthPerThumb = getThumbWidth();
+      const index = Math.floor(offset / widthPerThumb) % heroImages.length;
+
       if (index !== currentIndex) {
         currentIndex = index;
         hero.style.backgroundImage = `url(${heroImages[currentIndex]})`;
@@ -223,12 +259,14 @@
       requestAnimationFrame(updateHeroFromScroll);
     }
 
+    // Re-align on resize (debounced)
     let resizeTO;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTO);
       resizeTO = setTimeout(alignThumbsToHeroImageLeft, 100);
     });
 
+    // Kick things off
     alignThumbsToHeroImageLeft();
     updateHeroFromScroll();
   </script>
