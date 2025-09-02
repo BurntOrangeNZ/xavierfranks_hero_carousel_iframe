@@ -77,7 +77,8 @@
 
     @media (max-width: 1024px) {
       .hero {
-        height: 300px;
+        height: 420px; /* tablet portrait feel */
+        background-size: contain;
       }
       .thumbnail img {
         max-height: 166px;
@@ -91,16 +92,20 @@
       }
     }
 
+    /* MOBILE: make the hero image occupy more of the hero area (narrow sidebars) */
     @media (max-width: 600px) {
       .hero {
-        height: 220px;
+        height: 75vh;               /* taller hero on phones */
+        max-height: none;
+        background-position: center center;
+        background-size: auto 88%; /* scale image height to ~88% of hero -> narrows sidebars */
       }
       .thumbnail img {
         max-height: 124px;
         max-width: 103px;
       }
       .thumbnail {
-        margin: 0 0px;
+        margin: 0 3px; /* <-- small gaps on mobile (3px) */
       }
       .thumbnail-container {
         height: 124px;
@@ -177,13 +182,9 @@
 
     // Keep carousel running — helper to restart animation if it was interrupted
     function restartCarousel() {
-      // remove and re-add the animation to force it to restart correctly
       visibleTrack.style.animation = 'none';
-      // forcing reflow
-      void visibleTrack.offsetWidth;
-      visibleTrack.style.animation = null; // fallback to CSS-defined @keyframes scrollTrack
-      // If CSS isn't present for some reason, set it explicitly:
-      // visibleTrack.style.animation = 'scrollTrack 40s linear infinite';
+      void visibleTrack.offsetWidth; // force reflow
+      visibleTrack.style.animation = 'scrollTrack 40s linear infinite';
       visibleTrack.style.animationPlayState = 'running';
     }
 
@@ -194,9 +195,20 @@
 
       const img = new Image();
       img.onload = () => {
-        // compute 'contain' scale
-        const scale = Math.min(heroW / img.naturalWidth, heroH / img.naturalHeight);
-        const scaledW = Math.round(img.naturalWidth * scale);
+        // compute 'contain' scale (but on mobile we use background-size:auto 88% which scales height first)
+        // We'll derive the displayed image width based on whichever background-size rule is active.
+        let scaledW;
+        if (window.matchMedia("(max-width: 600px)").matches) {
+          // mobile rule: background-size: auto 88% -> image height = 88% of heroH
+          const targetImgH = Math.round(heroH * 0.88);
+          const scale = targetImgH / img.naturalHeight;
+          scaledW = Math.round(img.naturalWidth * scale);
+        } else {
+          // default 'contain' behaviour
+          const scale = Math.min(heroW / img.naturalWidth, heroH / img.naturalHeight);
+          scaledW = Math.round(img.naturalWidth * scale);
+        }
+
         const leftOffset = Math.max(0, Math.round((heroW - scaledW) / 2));
 
         // Make the thumbnail container the same width as the visible hero image
