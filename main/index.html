@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Hero with Synced Thumbnails</title>
+  <title>Hero with Click-to-Change Thumbnails</title>
   <style>
     body {
       margin: 0;
@@ -25,12 +25,11 @@
 
     .thumbnail-container {
       overflow: hidden;
-      width: 100%;
-      max-width: calc(4 * (80px + 58px));
-      margin: 10px 0 0;           /* desktop & tablet default gap */
+      margin: 10px auto 0;
       background: transparent;
       box-sizing: border-box;
-      will-change: margin-left, margin-top;
+      height: 208px;
+      position: relative;
     }
 
     .thumbnail-track {
@@ -47,7 +46,7 @@
     }
 
     .thumbnail {
-      margin: 0 29px;
+      margin: 0 20px;
       flex-shrink: 0;
       display: flex;
       align-items: flex-start;
@@ -56,12 +55,12 @@
     }
 
     .thumbnail img {
-      max-height: 100px;
-      max-width: 80px;
+      max-height: 208px;
+      max-width: 166px;
       width: auto;
       height: auto;
-      object-fit: contain;
-      border-radius: 0;
+      object-fit: cover;
+      flex-shrink: 0;
       display: block;
       transition: transform 0.2s;
     }
@@ -76,21 +75,19 @@
       overflow: hidden;
     }
 
-    /* --- RESPONSIVE FIXES --- */
     @media (max-width: 1024px) {
       .hero {
         height: 300px;
       }
       .thumbnail img {
-        max-height: 80px;
-        max-width: 65px;
+        max-height: 166px;
+        max-width: 136px;
       }
       .thumbnail {
-        margin: 0 20px;
+        margin: 0 9px;
       }
       .thumbnail-container {
-        max-width: calc(3 * (65px + 40px)); /* show ~3 thumbs on tablets */
-        margin-top: 10px;                   /* keep tablet spacing same */
+        height: 166px;
       }
     }
 
@@ -99,15 +96,14 @@
         height: 220px;
       }
       .thumbnail img {
-        max-height: 60px;
-        max-width: 50px;
+        max-height: 124px;
+        max-width: 103px;
       }
       .thumbnail {
-        margin: 0 15px;
+        margin: 0 0px;
       }
       .thumbnail-container {
-        max-width: calc(2.5 * (50px + 30px)); /* ~2–3 thumbs visible on mobile */
-        /* margin-top is auto-adjusted by JS to pull closer to the hero image */
+        height: 124px;
       }
     }
   </style>
@@ -125,15 +121,14 @@
   </div>
 
   <script>
-    // All available images
     const allHeroImages = [
-      "1.png", "2.png", "4.png", "5.png",
-      "6.png", "7.png", "8.png", "9.png", "10.png", "11.png",
+      "1.png","2.png","4.png","5.png",
+      "6.png","7.png","8.png","9.png","10.png","11.png"
     ];
 
     const allDisplayThumbnails = [
-      "1a.png", "2a.png", "4a.png", "5a.png",
-      "6a.png", "7a.png", "8a.png", "9a.png", "10a.png", "11a.png",
+      "1a.png","2a.png","4a.png","5a.png",
+      "6a.png","7a.png","8a.png","9a.png","10a.png","11a.png"
     ];
 
     const heroImages = allHeroImages.slice(0, 11);
@@ -144,11 +139,11 @@
     const hiddenTrack = document.getElementById('hiddenTrack');
     const thumbContainer = document.getElementById('thumbContainer');
 
-    // Duplicate for seamless scroll
+    // Duplicate for seamless [A A]
     const fullHeroList = [...heroImages, ...heroImages];
     const fullDisplayList = [...displayThumbnails, ...displayThumbnails];
 
-    // Build hidden track (logic)
+    // Hidden track (logic copy)
     fullHeroList.forEach(src => {
       const thumb = document.createElement('div');
       thumb.className = 'thumbnail';
@@ -158,7 +153,7 @@
       hiddenTrack.appendChild(thumb);
     });
 
-    // Build visible track (UI)
+    // Visible track (UI + click)
     fullDisplayList.forEach((src, idx) => {
       const thumb = document.createElement('div');
       thumb.className = 'thumbnail';
@@ -166,109 +161,76 @@
       img.src = src;
       thumb.appendChild(img);
 
-      // Click to jump hero, pause auto-scroll, resume after 5s
       img.addEventListener('click', () => {
         const baseIndex = idx % heroImages.length;
         currentIndex = baseIndex;
         hero.style.backgroundImage = `url(${heroImages[currentIndex]})`;
-        alignThumbsToHeroImageLeft();
-
-        visibleTrack.style.animationPlayState = "paused";
-        clearTimeout(resumeTimeout);
-        resumeTimeout = setTimeout(() => {
-          visibleTrack.style.animationPlayState = "running";
-        }, 5000);
+        resizeThumbsToHero();
+        restartCarousel(); // ensure carousel is running after click
       });
 
       visibleTrack.appendChild(thumb);
     });
 
-    // Initial hero
     let currentIndex = 0;
     hero.style.backgroundImage = `url(${heroImages[currentIndex]})`;
 
-    let resumeTimeout;
-
-    // Helper: current effective thumbnail width (respects breakpoints)
-    function getThumbWidth() {
-      const thumbEl = document.querySelector('.thumbnail');
-      const imgEl = document.querySelector('.thumbnail img');
-      if (!thumbEl || !imgEl) return 138; // fallback to desktop value (80 + 58)
-
-      const thumbStyle = getComputedStyle(thumbEl);
-      const imgStyle = getComputedStyle(imgEl);
-
-      const marginLeft = parseFloat(thumbStyle.marginLeft) || 0;
-      const marginRight = parseFloat(thumbStyle.marginRight) || 0;
-      const maxW = parseFloat(imgStyle.maxWidth) || 80;
-
-      return maxW + marginLeft + marginRight;
+    // Keep carousel running — helper to restart animation if it was interrupted
+    function restartCarousel() {
+      // remove and re-add the animation to force it to restart correctly
+      visibleTrack.style.animation = 'none';
+      // forcing reflow
+      void visibleTrack.offsetWidth;
+      visibleTrack.style.animation = null; // fallback to CSS-defined @keyframes scrollTrack
+      // If CSS isn't present for some reason, set it explicitly:
+      // visibleTrack.style.animation = 'scrollTrack 40s linear infinite';
+      visibleTrack.style.animationPlayState = 'running';
     }
 
-    // Align thumbnails under the visible *image* (not the full hero box)
-    // and on mobile pull the rail closer to the hero image.
-    function alignThumbsToHeroImageLeft() {
+    // Resize / align function: set thumbnail-container width to the visible hero image width
+    function resizeThumbsToHero() {
       const heroW = hero.clientWidth;
       const heroH = hero.clientHeight;
+
       const img = new Image();
       img.onload = () => {
-        const naturalW = img.naturalWidth || 1;
-        const naturalH = img.naturalHeight || 1;
-        const scale = Math.min(heroW / naturalW, heroH / naturalH); // 'contain'
-        const scaledW = naturalW * scale;
-        const scaledH = naturalH * scale;
+        // compute 'contain' scale
+        const scale = Math.min(heroW / img.naturalWidth, heroH / img.naturalHeight);
+        const scaledW = Math.round(img.naturalWidth * scale);
+        const leftOffset = Math.max(0, Math.round((heroW - scaledW) / 2));
 
-        // Horizontal letterbox padding -> move thumbnails to image's left edge
-        const leftOffset = Math.max(0, (heroW - scaledW) / 2);
+        // Make the thumbnail container the same width as the visible hero image
+        thumbContainer.style.width = `${scaledW}px`;
+        thumbContainer.style.maxWidth = `${scaledW}px`;
         thumbContainer.style.marginLeft = `${leftOffset}px`;
+        thumbContainer.style.marginRight = `${leftOffset}px`;
 
-        // --- MOBILE-ONLY: tighten the vertical gap below the hero image ---
-        if (window.innerWidth <= 600) {
-          const verticalPad = Math.max(0, (heroH - scaledH) / 2); // top/bottom bars
-          const desiredGap = 8; // px space we want between image & thumbnails
-          // Pull the rail upward by the extra empty space (cap at -40px so it won't overlap too far)
-          const mt = Math.max(-40, Math.round(desiredGap - verticalPad));
-          thumbContainer.style.marginTop = `${mt}px`;
-        } else {
-          // Keep default spacing on tablet/desktop
-          thumbContainer.style.marginTop = '10px';
-        }
+        // small tweak: if the visibleTrack animation is present, ensure it still runs
+        restartCarousel();
       };
       img.src = heroImages[currentIndex];
     }
 
-    function updateHeroFromScroll() {
-      if (visibleTrack.style.animationPlayState === "paused") {
-        requestAnimationFrame(updateHeroFromScroll);
-        return;
-      }
-
-      const trackRect = visibleTrack.getBoundingClientRect();
-      const containerRect = thumbContainer.getBoundingClientRect();
-      const offset = containerRect.left - trackRect.left;
-
-      const widthPerThumb = getThumbWidth();
-      const index = Math.floor(offset / widthPerThumb) % heroImages.length;
-
-      if (index !== currentIndex) {
-        currentIndex = index;
-        hero.style.backgroundImage = `url(${heroImages[currentIndex]})`;
-        alignThumbsToHeroImageLeft();
-      }
-
-      requestAnimationFrame(updateHeroFromScroll);
-    }
-
-    // Re-align on resize (debounced)
+    // Debounced resize handler
     let resizeTO;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTO);
-      resizeTO = setTimeout(alignThumbsToHeroImageLeft, 100);
+      resizeTO = setTimeout(() => {
+        resizeThumbsToHero();
+      }, 120);
     });
 
-    // Kick things off
-    alignThumbsToHeroImageLeft();
-    updateHeroFromScroll();
+    // initial layout
+    requestAnimationFrame(() => {
+      resizeThumbsToHero();
+      // ensure animation is running
+      visibleTrack.style.animationPlayState = 'running';
+    });
+
+    // safety: if user navigates and animation somehow pauses, keep it alive
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) restartCarousel();
+    });
   </script>
 
 </body>
