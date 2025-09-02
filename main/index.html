@@ -107,8 +107,8 @@
         background-size: auto 95%;
       }
       .thumbnail img {
-        max-height: 64px;
-        max-width: 43px;
+        max-height: 84px;
+        max-width: 63px;
       }
       .thumbnail {
         margin: 0 3px;  /* small gaps between thumbs */
@@ -177,8 +177,7 @@
         const baseIndex = idx % heroImages.length;
         currentIndex = baseIndex;
         hero.style.backgroundImage = `url(${heroImages[currentIndex]})`;
-        resizeThumbsToHero();
-        restartCarousel();
+        // removed resizeThumbsToHero() and restartCarousel() so carousel doesn’t reset on click
       });
 
       visibleTrack.appendChild(thumb);
