@@ -13,20 +13,23 @@
       overflow-x: hidden; /* prevent horizontal scroll caused by the thumb rail */
     }
 
+    /* HERO */
     .hero {
       width: 100%;
-      height: 400px;
+      height: 390px;            /* -10px */
       max-height: 80vh;
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
       background-color: transparent;
       transition: background-image 0.5s ease-in-out;
+      margin-bottom: 0; /* no default spacing below hero */
+      padding-bottom: 0;
     }
 
     .thumbnail-container {
       overflow: hidden;
-      margin: 10px auto 0;
+      margin: 2px auto 0;       /* 🔹 tightened gap (was 4px) */
       background: transparent;
       box-sizing: border-box;
       height: 208px;
@@ -76,9 +79,10 @@
       overflow: hidden;
     }
 
+    /* TABLET */
     @media (max-width: 1024px) {
       .hero {
-        height: 420px; /* tablet portrait feel */
+        height: 410px; /* -10px from 420 */
         background-size: contain;
       }
       .thumbnail img {
@@ -90,27 +94,28 @@
       }
       .thumbnail-container {
         height: 166px;
+        margin-top: 2px; /* 🔹 tighter gap on tablet */
       }
     }
 
-    /* MOBILE: make the hero image occupy more of the hero area (narrow sidebars) */
-    @media (max-width: 600px) {
+    /* MOBILE */
+    @media (max-width: 500px) {
       .hero {
-        height: 75vh;               /* taller hero on phones */
+        height: calc(75vh - 10px);  /* ~10px smaller than original mobile height */
         max-height: none;
         background-position: center center;
-        background-size: auto 88%; /* scale image height to ~88% of hero -> narrows sidebars */
+        background-size: auto 95%;
       }
       .thumbnail img {
-        max-height: 124px;
-        max-width: 103px;
+        max-height: 104px;
+        max-width: 83px;
       }
-      /* small gap on mobile between thumbs */
       .thumbnail {
-        margin: 0 3px;
+        margin: 0 3px;  /* small gaps between thumbs */
       }
       .thumbnail-container {
         height: 124px;
+        margin-top: 1px; /* 🔹 minimal gap on mobile */
       }
     }
   </style>
@@ -150,7 +155,7 @@
     const fullHeroList = [...heroImages, ...heroImages];
     const fullDisplayList = [...displayThumbnails, ...displayThumbnails];
 
-    // Hidden track (logic copy)
+    // Hidden track
     fullHeroList.forEach(src => {
       const thumb = document.createElement('div');
       thumb.className = 'thumbnail';
@@ -160,7 +165,7 @@
       hiddenTrack.appendChild(thumb);
     });
 
-    // Visible track (UI + click)
+    // Visible track
     fullDisplayList.forEach((src, idx) => {
       const thumb = document.createElement('div');
       thumb.className = 'thumbnail';
@@ -173,7 +178,7 @@
         currentIndex = baseIndex;
         hero.style.backgroundImage = `url(${heroImages[currentIndex]})`;
         resizeThumbsToHero();
-        restartCarousel(); // ensure carousel is running after click
+        restartCarousel();
       });
 
       visibleTrack.appendChild(thumb);
@@ -182,69 +187,61 @@
     let currentIndex = 0;
     hero.style.backgroundImage = `url(${heroImages[currentIndex]})`;
 
-    // Keep carousel running — helper to restart animation if it was interrupted
+    // Restart carousel
     function restartCarousel() {
       visibleTrack.style.animation = 'none';
-      void visibleTrack.offsetWidth; // force reflow
+      void visibleTrack.offsetWidth;
       visibleTrack.style.animation = 'scrollTrack 40s linear infinite';
       visibleTrack.style.animationPlayState = 'running';
     }
 
-    // Resize / align function: set thumbnail-container width to the visible hero image width
+    // Resize thumbs to hero width
     function resizeThumbsToHero() {
       const heroW = hero.clientWidth;
       const heroH = hero.clientHeight;
 
       const img = new Image();
       img.onload = () => {
-        // compute 'contain' scale (but on mobile we use background-size:auto 88% which scales height first)
-        // We'll derive the displayed image width based on whichever background-size rule is active.
         let scaledW;
         if (window.matchMedia("(max-width: 600px)").matches) {
-          // mobile rule: background-size: auto 88% -> image height = 88% of heroH
           const targetImgH = Math.round(heroH * 0.88);
           const scale = targetImgH / img.naturalHeight;
           scaledW = Math.round(img.naturalWidth * scale);
         } else {
-          // default 'contain' behaviour
           const scale = Math.min(heroW / img.naturalWidth, heroH / img.naturalHeight);
           scaledW = Math.round(img.naturalWidth * scale);
         }
 
         const leftOffset = Math.max(0, Math.round((heroW - scaledW) / 2));
 
-        // Make the thumbnail container the same width as the visible hero image
         thumbContainer.style.width = `${scaledW}px`;
         thumbContainer.style.maxWidth = `${scaledW}px`;
-
-        // Position it under the hero image's left edge using margin-left.
-        // DO NOT set margin-right to leftOffset (that could expand the page width).
         thumbContainer.style.marginLeft = `${leftOffset}px`;
         thumbContainer.style.marginRight = `0px`;
 
-        // ensure carousel continues
+        const isMobile = window.matchMedia("(max-width:600px)").matches;
+        const topGap = isMobile ? 1 : 2; // 🔹 minimal gaps
+        thumbContainer.style.marginTop = `${topGap}px`;
+
         restartCarousel();
       };
       img.src = heroImages[currentIndex];
     }
 
-    // Debounced resize handler
+    // Debounced resize
     let resizeTO;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTO);
-      resizeTO = setTimeout(() => {
-        resizeThumbsToHero();
-      }, 120);
+      resizeTO = setTimeout(resizeThumbsToHero, 120);
     });
 
-    // initial layout
+    // Initial layout
     requestAnimationFrame(() => {
       resizeThumbsToHero();
-      // ensure animation is running
       visibleTrack.style.animationPlayState = 'running';
     });
 
-    // safety: if user navigates and animation somehow pauses, keep it alive
+    // Keep alive on tab switch
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) restartCarousel();
     });
