@@ -10,6 +10,7 @@
       font-family: sans-serif;
       background: transparent;
       color: #fff;
+      overflow-x: hidden; /* prevent horizontal scroll caused by the thumb rail */
     }
 
     .hero {
@@ -104,8 +105,9 @@
         max-height: 124px;
         max-width: 103px;
       }
+      /* small gap on mobile between thumbs */
       .thumbnail {
-        margin: 0 3px; /* <-- small gaps on mobile (3px) */
+        margin: 0 3px;
       }
       .thumbnail-container {
         height: 124px;
@@ -214,10 +216,13 @@
         // Make the thumbnail container the same width as the visible hero image
         thumbContainer.style.width = `${scaledW}px`;
         thumbContainer.style.maxWidth = `${scaledW}px`;
-        thumbContainer.style.marginLeft = `${leftOffset}px`;
-        thumbContainer.style.marginRight = `${leftOffset}px`;
 
-        // small tweak: if the visibleTrack animation is present, ensure it still runs
+        // Position it under the hero image's left edge using margin-left.
+        // DO NOT set margin-right to leftOffset (that could expand the page width).
+        thumbContainer.style.marginLeft = `${leftOffset}px`;
+        thumbContainer.style.marginRight = `0px`;
+
+        // ensure carousel continues
         restartCarousel();
       };
       img.src = heroImages[currentIndex];
