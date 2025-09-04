@@ -8,15 +8,14 @@
     /* safety: prevent page horizontal scroll */
     html, body {
       overflow-x: hidden;
-      margin: 0;
-      padding: 0;
-      height: 100%;
     }
 
     body {
+      margin: 0;
       font-family: sans-serif;
       background: transparent;
       color: #fff;
+      overflow-x: hidden;
     }
 
     /* HERO */
@@ -40,9 +39,13 @@
       box-sizing: border-box;
       height: 208px;
       position: relative;
-      overscroll-behavior: contain; /* 🔹 prevent vertical scroll chaining */
+      overscroll-behavior-x: none;
       touch-action: pan-y;
       -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; /* Firefox */
+    }
+    .thumbnail-container::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Edge */
     }
 
     .thumbnail-track {
@@ -82,7 +85,6 @@
       transform: scale(1.05);
     }
 
-    /* hide the duplicate track */
     .hidden-track {
       display: none;
       height: 0;
@@ -114,8 +116,8 @@
         height: calc(75vh - 10px);
         max-height: none;
         background-position: center center;
-        background-size: auto 90%;
-        margin-bottom: 0; /* 🔹 removed -10px to stop vertical scroll */
+        background-size: auto 95%; /* slightly larger hero image */
+        margin-bottom: 0; /* keep thumbnails spaced via container */
       }
       .thumbnail img {
         max-height: 84px;
@@ -126,7 +128,7 @@
       }
       .thumbnail-container {
         height: 124px;
-        margin-top: 1px;
+        margin-top: 5px; /* ✅ enforce 5px gap below hero */
       }
     }
   </style>
@@ -196,7 +198,6 @@
     let currentIndex = 0;
     hero.style.backgroundImage = `url(${heroImages[currentIndex]})`;
 
-    // Restart carousel
     function restartCarousel() {
       visibleTrack.style.animation = 'none';
       void visibleTrack.offsetWidth;
@@ -204,7 +205,6 @@
       visibleTrack.style.animationPlayState = 'running';
     }
 
-    // Resize thumbs to hero width
     function resizeThumbsToHero() {
       const heroW = hero.clientWidth;
       const heroH = hero.clientHeight;
@@ -229,7 +229,7 @@
         thumbContainer.style.marginRight = `0px`;
 
         const isMobile = window.matchMedia("(max-width:600px)").matches;
-        const topGap = isMobile ? 1 : 2;
+        const topGap = isMobile ? 5 : 2; // ✅ keep at least 5px on mobile
         thumbContainer.style.marginTop = `${topGap}px`;
 
         restartCarousel();
@@ -237,20 +237,17 @@
       img.src = heroImages[currentIndex];
     }
 
-    // Debounced resize
     let resizeTO;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTO);
       resizeTO = setTimeout(resizeThumbsToHero, 120);
     });
 
-    // Initial layout
     requestAnimationFrame(() => {
       resizeThumbsToHero();
       visibleTrack.style.animationPlayState = 'running';
     });
 
-    // Keep alive on tab switch
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) restartCarousel();
     });
