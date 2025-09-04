@@ -5,43 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Hero with Click-to-Change Thumbnails</title>
   <style>
-    /* safety: prevent page horizontal scroll on iOS/other browsers */
+    /* safety: prevent page horizontal scroll */
     html, body {
       overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+      height: 100%;
     }
 
     body {
-      margin: 0;
       font-family: sans-serif;
       background: transparent;
       color: #fff;
-      /* keep this too (redundant with html above but harmless) */
-      overflow-x: hidden; /* prevent horizontal scroll caused by the thumb rail */
     }
 
     /* HERO */
     .hero {
       width: 100%;
-      height: 390px;            /* -10px */
+      height: 390px;
       max-height: 80vh; 
       background-size: cover;
       background-repeat: no-repeat;
       background-position: center;
       background-color: transparent;
       transition: background-image 0.5s ease-in-out;
-      margin-bottom: 10px; /* no default spacing below hero */
+      margin-bottom: 10px;
       padding-bottom: 0;
     }
 
     .thumbnail-container {
       overflow: hidden;
-      margin: 2px auto 0;       /* 🔹 tightened gap (was 4px) */
+      margin: 2px auto 0;
       background: transparent;
       box-sizing: border-box;
       height: 208px;
       position: relative;
-      /* prevent horizontal touch panning and overscroll chaining on mobile */
-      overscroll-behavior-x: none;
+      overscroll-behavior: contain; /* 🔹 prevent vertical scroll chaining */
       touch-action: pan-y;
       -webkit-overflow-scrolling: touch;
     }
@@ -83,9 +82,9 @@
       transform: scale(1.05);
     }
 
-    /* hide the duplicate track from layout so its large width cannot expand the page (iOS fix) */
+    /* hide the duplicate track */
     .hidden-track {
-      display: none; /* changed from visibility:hidden + height:0 to display:none */
+      display: none;
       height: 0;
       overflow: hidden;
     }
@@ -93,7 +92,7 @@
     /* TABLET */
     @media (max-width: 1024px) {
       .hero {
-        height: 410px; /* -10px from 420 */
+        height: 410px;
         background-size: contain;
       }
       .thumbnail img {
@@ -105,29 +104,29 @@
       }
       .thumbnail-container {
         height: 166px;
-        margin-top: 2px; /* 🔹 tighter gap on tablet */
+        margin-top: 2px;
       }
     }
 
     /* MOBILE */
     @media (max-width: 600px) {
       .hero {
-        height: calc(75vh - 10px);  /* ~10px smaller than original mobile height */
+        height: calc(75vh - 10px);
         max-height: none;
         background-position: center center;
         background-size: auto 90%;
-        margin-bottom: -10px;
+        margin-bottom: 0; /* 🔹 removed -10px to stop vertical scroll */
       }
       .thumbnail img {
         max-height: 84px;
         max-width: 63px;
       }
       .thumbnail {
-        margin: 0 3px;  /* small gaps between thumbs */
+        margin: 0 3px;
       }
       .thumbnail-container {
         height: 124px;
-        margin-top: 1px; /* 🔹 minimal gap on mobile */
+        margin-top: 1px;
       }
     }
   </style>
@@ -189,7 +188,6 @@
         const baseIndex = idx % heroImages.length;
         currentIndex = baseIndex;
         hero.style.backgroundImage = `url(${heroImages[currentIndex]})`;
-        // removed resizeThumbsToHero() and restartCarousel() so carousel doesn’t reset on click
       });
 
       visibleTrack.appendChild(thumb);
@@ -231,7 +229,7 @@
         thumbContainer.style.marginRight = `0px`;
 
         const isMobile = window.matchMedia("(max-width:600px)").matches;
-        const topGap = isMobile ? 1 : 2; // 🔹 minimal gaps
+        const topGap = isMobile ? 1 : 2;
         thumbContainer.style.marginTop = `${topGap}px`;
 
         restartCarousel();
