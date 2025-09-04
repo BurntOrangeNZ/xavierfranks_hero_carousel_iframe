@@ -5,11 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Hero with Click-to-Change Thumbnails</title>
   <style>
+    /* safety: prevent page horizontal scroll on iOS/other browsers */
+    html, body {
+      overflow-x: hidden;
+    }
+
     body {
       margin: 0;
       font-family: sans-serif;
       background: transparent;
       color: #fff;
+      /* keep this too (redundant with html above but harmless) */
       overflow-x: hidden; /* prevent horizontal scroll caused by the thumb rail */
     }
 
@@ -34,6 +40,10 @@
       box-sizing: border-box;
       height: 208px;
       position: relative;
+      /* prevent horizontal touch panning and overscroll chaining on mobile */
+      overscroll-behavior-x: none;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
     }
 
     .thumbnail-track {
@@ -73,8 +83,9 @@
       transform: scale(1.05);
     }
 
+    /* hide the duplicate track from layout so its large width cannot expand the page (iOS fix) */
     .hidden-track {
-      visibility: hidden;
+      display: none; /* changed from visibility:hidden + height:0 to display:none */
       height: 0;
       overflow: hidden;
     }
