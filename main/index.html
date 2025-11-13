@@ -1,3 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hero with Click-to-Change Thumbnails</title>
+<style>
+  html, body {
+    overflow-x: hidden;
+    overflow-y: hidden;
+    margin: 0;
+    font-family: sans-serif;
+    background: transparent;
+    color: #fff;
+  }
+
+  .hero {
+    width: 100%;
+    height: 450px;
+    max-height: 80vh;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    transition: background-image 0.5s ease-in-out;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+
+  .thumbnail-container {
+    overflow: hidden;
+    margin: 2px auto 0;
+    height: 208px;
+    position: relative;
+    scrollbar-width: none;
+  }
+
+  .thumbnail-container::-webkit-scrollbar { display: none; }
+
+  .thumbnail-track {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    will-change: transform;
+  }
+
+  .thumbnail {
+    margin: 0 5px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .thumbnail img {
+    max-height: 128px;
+    max-width: 86px;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.2s;
+  }
+
+  .thumbnail img:hover { transform: scale(1.05); }
+
+  @media (max-width: 1056px) {
+    .hero { height: 410px; background-size: contain; }
+    .thumbnail img { max-height: 166px; max-width: 136px; }
+    .thumbnail { margin: 0 9px; }
+    .thumbnail-container { height: 166px; }
+  }
+
+  @media (max-width: 600px) {
+    .hero { height: 75vh; background-size: auto 95%; margin-bottom: 0; }
+    .thumbnail img { max-height: 84px; max-width: 63px; }
+    .thumbnail { margin: 0 3px; }
+    .thumbnail-container { height: 124px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="hero" class="hero"></div>
+
+<div class="thumbnail-container" id="thumbContainer">
+  <div id="visibleTrack" class="thumbnail-track"></div>
+</div>
+
+<script>
 const allHeroImages = ["1rv2.jpg","2rv2.jpg","4rv2.jpg","5rv2.jpg","6rv2.jpg","7rv2.jpg","8rv2.jpg","9rv2.jpg","10rv2.jpg","11rv2.jpg"];
 const allDisplayThumbnails = ["1a.png","2a.png","4a.png","5a.png","6a.png","7a.png","8a.png","9a.png","10a.png","11a.png"];
 
@@ -38,7 +126,7 @@ createThumbnails();
 // Seamless loop animation
 let animationId;
 let scrollPosition = 0;
-const scrollSpeed = 0.3; // Adjust this value to change speed
+const scrollSpeed = 0.3;
 
 function animate() {
   scrollPosition -= scrollSpeed;
@@ -98,3 +186,7 @@ window.addEventListener('resize', () => {
 
 // Initialize everything
 resizeThumbsToHero();
+</script>
+
+</body>
+</html>
